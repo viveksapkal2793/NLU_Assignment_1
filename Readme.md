@@ -47,12 +47,16 @@ The BBC dataset contains news articles from 2004-2005 across five categories. Th
 
 ### Dataset Statistics
 
-- **Total Articles**: 1010 (balanced)
-- **Training Set**: 808 articles (80%)
-- **Test Set**: 202 articles (20%)
-- **Average Document Length**: ~350 words
-- **Vocabulary Size**: ~15,000 unique words
+- **Total Articles**: 834 (balanced)
+- **Training Set**: 667 articles (80%)
+- **Test Set**: 167 articles (20%)
+- **Average Document Length**: ~399 words (SPORT: 337 words, POLITICS: 461 words)
+- **Vocabulary Size**: 21,971 unique words
+  - SPORT vocabulary: 12,879 words
+  - POLITICS vocabulary: 14,476 words
+  - Shared vocabulary: 5,384 words (24.5%)
 - **Class Distribution**: 50% SPORT, 50% POLITICS (balanced)
+- **Class Separability**: HIGH (75.5% vocabulary distinctiveness)
 
 ## Installation
 
