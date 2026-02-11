@@ -65,7 +65,7 @@ def ngram_features(text, vocab_idx, n=2):
     return features
 
 
-# ================== LOGISTIC REGRESSION (N-GRAM) ==================
+# ================== LOGISTIC REGRESSION (N-GRAM) - OPTIMIZED ==================
 
 def sigmoid(z):
     """Sigmoid activation function."""
@@ -76,8 +76,8 @@ def sigmoid(z):
     return 1 / (1 + math.exp(-z))
 
 
-def train_ngram_logistic_regression(train_data, n=2, learning_rate=0.01, epochs=100):
-    """Train logistic regression with N-gram features."""
+def train_ngram_logistic_regression(train_data, n=2, learning_rate=0.1, epochs=20):
+    """Train logistic regression with N-gram features - OPTIMIZED."""
     # Build vocabulary of n-grams
     vocab = set()
     for text, _ in train_data:
@@ -88,30 +88,41 @@ def train_ngram_logistic_regression(train_data, n=2, learning_rate=0.01, epochs=
     vocab = sorted(list(vocab))
     vocab_idx = {ng: i for i, ng in enumerate(vocab)}
     
+    # Pre-compute feature vectors
+    feature_vectors = []
+    labels_binary = []
+    label_map = {"POLITICS": 0, "SPORT": 1}
+    
+    for text, label in train_data:
+        features = ngram_features(text, vocab_idx, n)
+        feature_vectors.append(features)
+        labels_binary.append(label_map[label])
+    
     # Initialize weights
     weights = [0.0] * len(vocab)
     bias = 0.0
     
-    # Convert labels to binary (0/1)
-    label_map = {"POLITICS": 0, "SPORT": 1}
-    
     # Training
     for epoch in range(epochs):
-        for text, label in train_data:
-            # Convert to feature vector
-            features = ngram_features(text, vocab_idx, n)
+        indices = list(range(len(train_data)))
+        random.shuffle(indices)
+        
+        for idx in indices:
+            features = feature_vectors[idx]
+            y = labels_binary[idx]
             
-            # Prediction
-            z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+            # Prediction (sparse computation)
+            z = bias
+            for feat_idx, feat_val in features.items():
+                z += weights[feat_idx] * feat_val
+            
             pred = sigmoid(z)
-            
-            # Update (gradient descent)
-            y = label_map[label]
             error = pred - y
             
+            # Update (sparse update)
             bias -= learning_rate * error
-            for i in range(len(weights)):
-                weights[i] -= learning_rate * error * features.get(i, 0)
+            for feat_idx, feat_val in features.items():
+                weights[feat_idx] -= learning_rate * error * feat_val
     
     return weights, bias, vocab_idx, n, label_map
 
@@ -121,7 +132,10 @@ def predict_ngram_logistic_regression(text, model):
     weights, bias, vocab_idx, n, label_map = model
     features = ngram_features(text, vocab_idx, n)
     
-    z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+    z = bias
+    for feat_idx, feat_val in features.items():
+        z += weights[feat_idx] * feat_val
+    
     pred = sigmoid(z)
     
     # Return label based on threshold 0.5
@@ -131,10 +145,10 @@ def predict_ngram_logistic_regression(text, model):
         return "POLITICS"
 
 
-# ================== SVM PERCEPTRON (N-GRAM) ==================
+# ================== SVM PERCEPTRON (N-GRAM) - OPTIMIZED ==================
 
-def train_ngram_svm(train_data, n=2, epochs=50, learning_rate=0.01):
-    """Train SVM using perceptron algorithm with N-gram features."""
+def train_ngram_svm(train_data, n=2, epochs=20, learning_rate=0.1):
+    """Train SVM using perceptron algorithm with N-gram features - OPTIMIZED."""
     # Build vocabulary of n-grams
     vocab = set()
     for text, _ in train_data:
@@ -145,31 +159,39 @@ def train_ngram_svm(train_data, n=2, epochs=50, learning_rate=0.01):
     vocab = sorted(list(vocab))
     vocab_idx = {ng: i for i, ng in enumerate(vocab)}
     
+    # Pre-compute feature vectors
+    feature_vectors = []
+    labels_binary = []
+    label_map = {"POLITICS": -1, "SPORT": 1}
+    
+    for text, label in train_data:
+        features = ngram_features(text, vocab_idx, n)
+        feature_vectors.append(features)
+        labels_binary.append(label_map[label])
+    
     # Initialize weights
     weights = [0.0] * len(vocab)
     bias = 0.0
     
-    # Convert labels to -1/+1
-    label_map = {"POLITICS": -1, "SPORT": 1}
-    
     # Training
     for epoch in range(epochs):
-        # Shuffle data each epoch
-        shuffled = train_data[:]
-        random.shuffle(shuffled)
+        indices = list(range(len(train_data)))
+        random.shuffle(indices)
         
-        for text, label in shuffled:
-            features = ngram_features(text, vocab_idx, n)
-            y = label_map[label]
+        for idx in indices:
+            features = feature_vectors[idx]
+            y = labels_binary[idx]
             
-            # Prediction
-            z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+            # Prediction (sparse computation)
+            z = bias
+            for feat_idx, feat_val in features.items():
+                z += weights[feat_idx] * feat_val
             
             # Update if misclassified
             if y * z <= 0:
                 bias += learning_rate * y
-                for i in range(len(weights)):
-                    weights[i] += learning_rate * y * features.get(i, 0)
+                for feat_idx, feat_val in features.items():
+                    weights[feat_idx] += learning_rate * y * feat_val
     
     return weights, bias, vocab_idx, n, label_map
 
@@ -179,7 +201,9 @@ def predict_ngram_svm(text, model):
     weights, bias, vocab_idx, n, label_map = model
     features = ngram_features(text, vocab_idx, n)
     
-    z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+    z = bias
+    for feat_idx, feat_val in features.items():
+        z += weights[feat_idx] * feat_val
     
     if z >= 0:
         return "SPORT"
@@ -187,11 +211,15 @@ def predict_ngram_svm(text, model):
         return "POLITICS"
 
 
-# ================== K-NEAREST NEIGHBORS (N-GRAM) ==================
+# ================== K-NEAREST NEIGHBORS (N-GRAM) - OPTIMIZED ==================
 
 def cosine_similarity(vec1, vec2):
-    """Calculate cosine similarity between two sparse vectors."""
-    dot_product = sum(vec1.get(k, 0) * vec2.get(k, 0) for k in set(vec1) | set(vec2))
+    """Calculate cosine similarity between two sparse vectors - OPTIMIZED."""
+    shared_keys = set(vec1.keys()) & set(vec2.keys())
+    if not shared_keys:
+        return 0.0
+    
+    dot_product = sum(vec1[k] * vec2[k] for k in shared_keys)
     
     mag1 = math.sqrt(sum(v**2 for v in vec1.values()))
     mag2 = math.sqrt(sum(v**2 for v in vec2.values()))
@@ -232,7 +260,7 @@ def predict_ngram_knn(text, model, k=5):
         sim = cosine_similarity(test_features, train_features)
         similarities.append((sim, label))
     
-    # Get top k neighbors
+    # Get top k neighbors using sort
     similarities.sort(reverse=True, key=lambda x: x[0])
     top_k = similarities[:k]
     

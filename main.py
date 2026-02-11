@@ -53,47 +53,47 @@ def main():
     tfidf_acc = evaluate(test_data, predict_tfidf, tfidf_model)
 
     print(f"Bag of Words  : {bow_acc:.4f}")
-    print(f"N-grams (2)   : {ngram_acc:.4f}")
+    print(f"N-grams  : {ngram_acc:.4f}")
     print(f"TF-IDF        : {tfidf_acc:.4f}")
 
     print("\n" + "=" * 60)
     print("LOGISTIC REGRESSION")
     print("=" * 60)
 
-    # Logistic Regression with BoW
-    lr_bow_model = train_bow_logistic_regression(train_data, epochs=50)
+    # Logistic Regression with BoW (OPTIMIZED: 20 epochs)
+    lr_bow_model = train_bow_logistic_regression(train_data, epochs=20)
     lr_bow_acc = evaluate(test_data, predict_bow_logistic_regression, lr_bow_model)
 
-    # Logistic Regression with N-grams
-    lr_ngram_model = train_ngram_logistic_regression(train_data, n=2, epochs=50)
+    # Logistic Regression with N-grams (OPTIMIZED: 20 epochs)
+    lr_ngram_model = train_ngram_logistic_regression(train_data, n=2, epochs=20)
     lr_ngram_acc = evaluate(test_data, predict_ngram_logistic_regression, lr_ngram_model)
 
-    # Logistic Regression with TF-IDF
-    lr_tfidf_model = train_tfidf_logistic_regression(train_data, epochs=50)
+    # Logistic Regression with TF-IDF (OPTIMIZED: 20 epochs)
+    lr_tfidf_model = train_tfidf_logistic_regression(train_data, epochs=20)
     lr_tfidf_acc = evaluate(test_data, predict_tfidf_logistic_regression, lr_tfidf_model)
 
     print(f"BoW           : {lr_bow_acc:.4f}")
-    print(f"N-grams (2)   : {lr_ngram_acc:.4f}")
+    print(f"N-grams  : {lr_ngram_acc:.4f}")
     print(f"TF-IDF        : {lr_tfidf_acc:.4f}")
 
     print("\n" + "=" * 60)
     print("SVM (PERCEPTRON)")
     print("=" * 60)
 
-    # SVM with BoW
-    svm_bow_model = train_bow_svm(train_data, epochs=30)
+    # SVM with BoW (OPTIMIZED: 20 epochs)
+    svm_bow_model = train_bow_svm(train_data, epochs=20)
     svm_bow_acc = evaluate(test_data, predict_bow_svm, svm_bow_model)
 
-    # SVM with N-grams
-    svm_ngram_model = train_ngram_svm(train_data, n=2, epochs=30)
+    # SVM with N-grams (OPTIMIZED: 20 epochs)
+    svm_ngram_model = train_ngram_svm(train_data, n=2, epochs=20)
     svm_ngram_acc = evaluate(test_data, predict_ngram_svm, svm_ngram_model)
 
-    # SVM with TF-IDF
-    svm_tfidf_model = train_tfidf_svm(train_data, epochs=30)
+    # SVM with TF-IDF (OPTIMIZED: 20 epochs)
+    svm_tfidf_model = train_tfidf_svm(train_data, epochs=20)
     svm_tfidf_acc = evaluate(test_data, predict_tfidf_svm, svm_tfidf_model)
 
     print(f"BoW           : {svm_bow_acc:.4f}")
-    print(f"N-grams (2)   : {svm_ngram_acc:.4f}")
+    print(f"N-grams  : {svm_ngram_acc:.4f}")
     print(f"TF-IDF        : {svm_tfidf_acc:.4f}")
 
     print("\n" + "=" * 60)
@@ -119,7 +119,7 @@ def main():
                             knn_tfidf_model)
 
     print(f"BoW           : {knn_bow_acc:.4f}")
-    print(f"N-grams (2)   : {knn_ngram_acc:.4f}")
+    print(f"N-grams  : {knn_ngram_acc:.4f}")
     print(f"TF-IDF        : {knn_tfidf_acc:.4f}")
 
     print("\n" + "=" * 60)

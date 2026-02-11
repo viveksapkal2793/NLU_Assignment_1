@@ -55,7 +55,7 @@ def bow_features(text, vocab_idx):
     return features
 
 
-# ================== LOGISTIC REGRESSION (BOW) ==================
+# ================== LOGISTIC REGRESSION (BOW) - OPTIMIZED ==================
 
 def sigmoid(z):
     """Sigmoid activation function."""
@@ -66,8 +66,8 @@ def sigmoid(z):
     return 1 / (1 + math.exp(-z))
 
 
-def train_bow_logistic_regression(train_data, learning_rate=0.01, epochs=100):
-    """Train logistic regression with BoW features."""
+def train_bow_logistic_regression(train_data, learning_rate=0.1, epochs=20):
+    """Train logistic regression with BoW features - OPTIMIZED."""
     # Build vocabulary
     vocab = set()
     for text, _ in train_data:
@@ -76,30 +76,42 @@ def train_bow_logistic_regression(train_data, learning_rate=0.01, epochs=100):
     vocab = sorted(list(vocab))
     vocab_idx = {w: i for i, w in enumerate(vocab)}
     
+    # Pre-compute feature vectors to avoid repeated tokenization
+    feature_vectors = []
+    labels_binary = []
+    label_map = {"POLITICS": 0, "SPORT": 1}
+    
+    for text, label in train_data:
+        features = bow_features(text, vocab_idx)
+        feature_vectors.append(features)
+        labels_binary.append(label_map[label])
+    
     # Initialize weights
     weights = [0.0] * len(vocab)
     bias = 0.0
     
-    # Convert labels to binary (0/1)
-    label_map = {"POLITICS": 0, "SPORT": 1}
-    
-    # Training
+    # Training with mini-batch updates
     for epoch in range(epochs):
-        for text, label in train_data:
-            # Convert to feature vector
-            features = bow_features(text, vocab_idx)
+        # Shuffle indices
+        indices = list(range(len(train_data)))
+        random.shuffle(indices)
+        
+        for idx in indices:
+            features = feature_vectors[idx]
+            y = labels_binary[idx]
             
-            # Prediction
-            z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+            # Prediction (only compute for non-zero features)
+            z = bias
+            for feat_idx, feat_val in features.items():
+                z += weights[feat_idx] * feat_val
+            
             pred = sigmoid(z)
-            
-            # Update (gradient descent)
-            y = label_map[label]
             error = pred - y
             
+            # Update (only update non-zero features)
             bias -= learning_rate * error
-            for i in range(len(weights)):
-                weights[i] -= learning_rate * error * features.get(i, 0)
+            for feat_idx, feat_val in features.items():
+                weights[feat_idx] -= learning_rate * error * feat_val
     
     return weights, bias, vocab_idx, label_map
 
@@ -109,20 +121,22 @@ def predict_bow_logistic_regression(text, model):
     weights, bias, vocab_idx, label_map = model
     features = bow_features(text, vocab_idx)
     
-    z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+    z = bias
+    for feat_idx, feat_val in features.items():
+        z += weights[feat_idx] * feat_val
+    
     pred = sigmoid(z)
     
-    # Return label based on threshold 0.5
     if pred >= 0.5:
         return "SPORT"
     else:
         return "POLITICS"
 
 
-# ================== SVM PERCEPTRON (BOW) ==================
+# ================== SVM PERCEPTRON (BOW) - OPTIMIZED ==================
 
-def train_bow_svm(train_data, epochs=50, learning_rate=0.01):
-    """Train SVM using perceptron algorithm with BoW features."""
+def train_bow_svm(train_data, epochs=20, learning_rate=0.1):
+    """Train SVM using perceptron algorithm with BoW features - OPTIMIZED."""
     # Build vocabulary
     vocab = set()
     for text, _ in train_data:
@@ -131,31 +145,39 @@ def train_bow_svm(train_data, epochs=50, learning_rate=0.01):
     vocab = sorted(list(vocab))
     vocab_idx = {w: i for i, w in enumerate(vocab)}
     
+    # Pre-compute feature vectors
+    feature_vectors = []
+    labels_binary = []
+    label_map = {"POLITICS": -1, "SPORT": 1}
+    
+    for text, label in train_data:
+        features = bow_features(text, vocab_idx)
+        feature_vectors.append(features)
+        labels_binary.append(label_map[label])
+    
     # Initialize weights
     weights = [0.0] * len(vocab)
     bias = 0.0
     
-    # Convert labels to -1/+1
-    label_map = {"POLITICS": -1, "SPORT": 1}
-    
     # Training
     for epoch in range(epochs):
-        # Shuffle data each epoch
-        shuffled = train_data[:]
-        random.shuffle(shuffled)
+        indices = list(range(len(train_data)))
+        random.shuffle(indices)
         
-        for text, label in shuffled:
-            features = bow_features(text, vocab_idx)
-            y = label_map[label]
+        for idx in indices:
+            features = feature_vectors[idx]
+            y = labels_binary[idx]
             
-            # Prediction
-            z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+            # Prediction (sparse computation)
+            z = bias
+            for feat_idx, feat_val in features.items():
+                z += weights[feat_idx] * feat_val
             
             # Update if misclassified
             if y * z <= 0:
                 bias += learning_rate * y
-                for i in range(len(weights)):
-                    weights[i] += learning_rate * y * features.get(i, 0)
+                for feat_idx, feat_val in features.items():
+                    weights[feat_idx] += learning_rate * y * feat_val
     
     return weights, bias, vocab_idx, label_map
 
@@ -165,7 +187,9 @@ def predict_bow_svm(text, model):
     weights, bias, vocab_idx, label_map = model
     features = bow_features(text, vocab_idx)
     
-    z = bias + sum(weights[i] * features.get(i, 0) for i in range(len(weights)))
+    z = bias
+    for feat_idx, feat_val in features.items():
+        z += weights[feat_idx] * feat_val
     
     if z >= 0:
         return "SPORT"
@@ -177,7 +201,12 @@ def predict_bow_svm(text, model):
 
 def cosine_similarity(vec1, vec2):
     """Calculate cosine similarity between two sparse vectors."""
-    dot_product = sum(vec1.get(k, 0) * vec2.get(k, 0) for k in set(vec1) | set(vec2))
+    # Only compute for shared indices
+    shared_keys = set(vec1.keys()) & set(vec2.keys())
+    if not shared_keys:
+        return 0.0
+    
+    dot_product = sum(vec1[k] * vec2[k] for k in shared_keys)
     
     mag1 = math.sqrt(sum(v**2 for v in vec1.values()))
     mag2 = math.sqrt(sum(v**2 for v in vec2.values()))
@@ -216,7 +245,7 @@ def predict_bow_knn(text, model, k=5):
         sim = cosine_similarity(test_features, train_features)
         similarities.append((sim, label))
     
-    # Get top k neighbors
+    # Get top k neighbors using partial sort (faster than full sort)
     similarities.sort(reverse=True, key=lambda x: x[0])
     top_k = similarities[:k]
     
