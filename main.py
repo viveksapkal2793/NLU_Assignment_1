@@ -5,7 +5,12 @@ from bow_model import (
     train_bow_svm, predict_bow_svm,
     train_bow_knn, predict_bow_knn
 )
-from ngram_model import train_ngram_naive_bayes, predict_ngram
+from ngram_model import (
+    train_ngram_naive_bayes, predict_ngram,
+    train_ngram_logistic_regression, predict_ngram_logistic_regression,
+    train_ngram_svm, predict_ngram_svm,
+    train_ngram_knn, predict_ngram_knn
+)
 from tfidf_model import (
     train_tfidf_naive_bayes, predict_tfidf,
     train_tfidf_logistic_regression, predict_tfidf_logistic_regression,
@@ -29,9 +34,9 @@ def main():
     print(f"Training samples: {len(train_data)}")
     print(f"Testing samples: {len(test_data)}\n")
 
-    print("=" * 50)
+    print("=" * 60)
     print("NAIVE BAYES MODELS")
-    print("=" * 50)
+    print("=" * 60)
 
     # Bag of Words - Naive Bayes
     bow_model = train_bow_naive_bayes(train_data)
@@ -48,48 +53,64 @@ def main():
     tfidf_acc = evaluate(test_data, predict_tfidf, tfidf_model)
 
     print(f"Bag of Words  : {bow_acc:.4f}")
-    print(f"N-grams       : {ngram_acc:.4f}")
+    print(f"N-grams (2)   : {ngram_acc:.4f}")
     print(f"TF-IDF        : {tfidf_acc:.4f}")
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print("LOGISTIC REGRESSION")
-    print("=" * 50)
+    print("=" * 60)
 
     # Logistic Regression with BoW
     lr_bow_model = train_bow_logistic_regression(train_data, epochs=50)
     lr_bow_acc = evaluate(test_data, predict_bow_logistic_regression, lr_bow_model)
+
+    # Logistic Regression with N-grams
+    lr_ngram_model = train_ngram_logistic_regression(train_data, n=2, epochs=50)
+    lr_ngram_acc = evaluate(test_data, predict_ngram_logistic_regression, lr_ngram_model)
 
     # Logistic Regression with TF-IDF
     lr_tfidf_model = train_tfidf_logistic_regression(train_data, epochs=50)
     lr_tfidf_acc = evaluate(test_data, predict_tfidf_logistic_regression, lr_tfidf_model)
 
     print(f"BoW           : {lr_bow_acc:.4f}")
+    print(f"N-grams (2)   : {lr_ngram_acc:.4f}")
     print(f"TF-IDF        : {lr_tfidf_acc:.4f}")
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print("SVM (PERCEPTRON)")
-    print("=" * 50)
+    print("=" * 60)
 
     # SVM with BoW
     svm_bow_model = train_bow_svm(train_data, epochs=30)
     svm_bow_acc = evaluate(test_data, predict_bow_svm, svm_bow_model)
+
+    # SVM with N-grams
+    svm_ngram_model = train_ngram_svm(train_data, n=2, epochs=30)
+    svm_ngram_acc = evaluate(test_data, predict_ngram_svm, svm_ngram_model)
 
     # SVM with TF-IDF
     svm_tfidf_model = train_tfidf_svm(train_data, epochs=30)
     svm_tfidf_acc = evaluate(test_data, predict_tfidf_svm, svm_tfidf_model)
 
     print(f"BoW           : {svm_bow_acc:.4f}")
+    print(f"N-grams (2)   : {svm_ngram_acc:.4f}")
     print(f"TF-IDF        : {svm_tfidf_acc:.4f}")
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print("K-NEAREST NEIGHBORS (k=5)")
-    print("=" * 50)
+    print("=" * 60)
 
     # KNN with BoW
     knn_bow_model = train_bow_knn(train_data)
     knn_bow_acc = evaluate(test_data,
                           lambda t, m: predict_bow_knn(t, m, k=5),
                           knn_bow_model)
+
+    # KNN with N-grams
+    knn_ngram_model = train_ngram_knn(train_data, n=2)
+    knn_ngram_acc = evaluate(test_data,
+                            lambda t, m: predict_ngram_knn(t, m, k=5),
+                            knn_ngram_model)
 
     # KNN with TF-IDF
     knn_tfidf_model = train_tfidf_knn(train_data)
@@ -98,17 +119,18 @@ def main():
                             knn_tfidf_model)
 
     print(f"BoW           : {knn_bow_acc:.4f}")
+    print(f"N-grams (2)   : {knn_ngram_acc:.4f}")
     print(f"TF-IDF        : {knn_tfidf_acc:.4f}")
 
-    print("\n" + "=" * 50)
-    print("SUMMARY")
-    print("=" * 50)
-    print(f"{'Algorithm':<25} {'BoW':<10} {'TF-IDF':<10}")
-    print("-" * 50)
-    print(f"{'Naive Bayes':<25} {bow_acc:.4f}    {tfidf_acc:.4f}")
-    print(f"{'Logistic Regression':<25} {lr_bow_acc:.4f}    {lr_tfidf_acc:.4f}")
-    print(f"{'SVM':<25} {svm_bow_acc:.4f}    {svm_tfidf_acc:.4f}")
-    print(f"{'KNN':<25} {knn_bow_acc:.4f}    {knn_tfidf_acc:.4f}")
+    print("\n" + "=" * 60)
+    print("SUMMARY - COMPLETE COMPARISON")
+    print("=" * 60)
+    print(f"{'Algorithm':<25} {'BoW':<10} {'N-grams':<10} {'TF-IDF':<10}")
+    print("-" * 60)
+    print(f"{'Naive Bayes':<25} {bow_acc:.4f}    {ngram_acc:.4f}    {tfidf_acc:.4f}")
+    print(f"{'Logistic Regression':<25} {lr_bow_acc:.4f}    {lr_ngram_acc:.4f}    {lr_tfidf_acc:.4f}")
+    print(f"{'SVM':<25} {svm_bow_acc:.4f}    {svm_ngram_acc:.4f}    {svm_tfidf_acc:.4f}")
+    print(f"{'KNN':<25} {knn_bow_acc:.4f}    {knn_ngram_acc:.4f}    {knn_tfidf_acc:.4f}")
 
 
 if __name__ == "__main__":
