@@ -8,6 +8,8 @@ def tokenize(text):
 
 def extract_ngrams(words, n=2):
     """Extract n-grams from a list of words."""
+    if len(words) < n:
+        return []
     return ["_".join(words[i:i+n]) for i in range(len(words)-n+1)]
 
 

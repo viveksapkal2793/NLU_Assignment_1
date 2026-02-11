@@ -1,4 +1,5 @@
 from utils import load_bbc_data, train_test_split
+from data_analysis import analyze_dataset
 from bow_model import (
     train_bow_naive_bayes, predict_bow,
     train_bow_logistic_regression, predict_bow_logistic_regression,
@@ -28,109 +29,142 @@ def evaluate(test_data, predict_fn, model):
 
 
 def main():
+    # Load and analyze data
     data = load_bbc_data("bbc-text.csv")
+    stats = analyze_dataset(data)
+    
+    # Split data
     train_data, test_data = train_test_split(data)
-
-    print(f"Training samples: {len(train_data)}")
+    
+    print("=" * 70)
+    print("MODEL TRAINING & EVALUATION")
+    print("=" * 70)
+    print(f"\nTraining samples: {len(train_data)}")
     print(f"Testing samples: {len(test_data)}\n")
 
-    print("=" * 60)
-    print("NAIVE BAYES MODELS")
-    print("=" * 60)
+    # Define n-gram sizes to test
+    ngram_sizes = [2, 3, 4]  # Bigram, Trigram, Quadgram
+    
+    # Store results for summary
+    results = {
+        'bow': {},
+        'ngrams': {n: {} for n in ngram_sizes},
+        'tfidf': {}
+    }
 
-    # Bag of Words - Naive Bayes
+    # ==================== NAIVE BAYES ====================
+    print("=" * 70)
+    print("NAIVE BAYES MODELS")
+    print("=" * 70)
+
+    # Bag of Words
     bow_model = train_bow_naive_bayes(train_data)
     bow_acc = evaluate(test_data, predict_bow, bow_model)
+    results['bow']['nb'] = bow_acc
+    print(f"Bag of Words         : {bow_acc:.4f}")
 
-    # N-grams - Naive Bayes
-    ngram_model = train_ngram_naive_bayes(train_data, n=2)
-    ngram_acc = evaluate(test_data,
-                          lambda t, m: predict_ngram(t, m, 2),
-                          ngram_model)
+    # N-grams (multiple sizes)
+    for n in ngram_sizes:
+        ngram_model = train_ngram_naive_bayes(train_data, n=n)
+        ngram_acc = evaluate(test_data, lambda t, m: predict_ngram(t, m, n), ngram_model)
+        results['ngrams'][n]['nb'] = ngram_acc
+        print(f"N-grams ({n})          : {ngram_acc:.4f}")
 
-    # TF-IDF - Naive Bayes
+    # TF-IDF
     tfidf_model = train_tfidf_naive_bayes(train_data)
     tfidf_acc = evaluate(test_data, predict_tfidf, tfidf_model)
+    results['tfidf']['nb'] = tfidf_acc
+    print(f"TF-IDF               : {tfidf_acc:.4f}")
 
-    print(f"Bag of Words  : {bow_acc:.4f}")
-    print(f"N-grams  : {ngram_acc:.4f}")
-    print(f"TF-IDF        : {tfidf_acc:.4f}")
-
-    print("\n" + "=" * 60)
+    # ==================== LOGISTIC REGRESSION ====================
+    print("\n" + "=" * 70)
     print("LOGISTIC REGRESSION")
-    print("=" * 60)
+    print("=" * 70)
 
-    # Logistic Regression with BoW (OPTIMIZED: 20 epochs)
+    # BoW
     lr_bow_model = train_bow_logistic_regression(train_data, epochs=20)
     lr_bow_acc = evaluate(test_data, predict_bow_logistic_regression, lr_bow_model)
+    results['bow']['lr'] = lr_bow_acc
+    print(f"BoW                  : {lr_bow_acc:.4f}")
 
-    # Logistic Regression with N-grams (OPTIMIZED: 20 epochs)
-    lr_ngram_model = train_ngram_logistic_regression(train_data, n=2, epochs=20)
-    lr_ngram_acc = evaluate(test_data, predict_ngram_logistic_regression, lr_ngram_model)
+    # N-grams (multiple sizes)
+    for n in ngram_sizes:
+        lr_ngram_model = train_ngram_logistic_regression(train_data, n=n, epochs=20)
+        lr_ngram_acc = evaluate(test_data, predict_ngram_logistic_regression, lr_ngram_model)
+        results['ngrams'][n]['lr'] = lr_ngram_acc
+        print(f"N-grams ({n})          : {lr_ngram_acc:.4f}")
 
-    # Logistic Regression with TF-IDF (OPTIMIZED: 20 epochs)
+    # TF-IDF
     lr_tfidf_model = train_tfidf_logistic_regression(train_data, epochs=20)
     lr_tfidf_acc = evaluate(test_data, predict_tfidf_logistic_regression, lr_tfidf_model)
+    results['tfidf']['lr'] = lr_tfidf_acc
+    print(f"TF-IDF               : {lr_tfidf_acc:.4f}")
 
-    print(f"BoW           : {lr_bow_acc:.4f}")
-    print(f"N-grams  : {lr_ngram_acc:.4f}")
-    print(f"TF-IDF        : {lr_tfidf_acc:.4f}")
-
-    print("\n" + "=" * 60)
+    # ==================== SVM ====================
+    print("\n" + "=" * 70)
     print("SVM (PERCEPTRON)")
-    print("=" * 60)
+    print("=" * 70)
 
-    # SVM with BoW (OPTIMIZED: 20 epochs)
+    # BoW
     svm_bow_model = train_bow_svm(train_data, epochs=20)
     svm_bow_acc = evaluate(test_data, predict_bow_svm, svm_bow_model)
+    results['bow']['svm'] = svm_bow_acc
+    print(f"BoW                  : {svm_bow_acc:.4f}")
 
-    # SVM with N-grams (OPTIMIZED: 20 epochs)
-    svm_ngram_model = train_ngram_svm(train_data, n=2, epochs=20)
-    svm_ngram_acc = evaluate(test_data, predict_ngram_svm, svm_ngram_model)
+    # N-grams (multiple sizes)
+    for n in ngram_sizes:
+        svm_ngram_model = train_ngram_svm(train_data, n=n, epochs=20)
+        svm_ngram_acc = evaluate(test_data, predict_ngram_svm, svm_ngram_model)
+        results['ngrams'][n]['svm'] = svm_ngram_acc
+        print(f"N-grams ({n})          : {svm_ngram_acc:.4f}")
 
-    # SVM with TF-IDF (OPTIMIZED: 20 epochs)
+    # TF-IDF
     svm_tfidf_model = train_tfidf_svm(train_data, epochs=20)
     svm_tfidf_acc = evaluate(test_data, predict_tfidf_svm, svm_tfidf_model)
+    results['tfidf']['svm'] = svm_tfidf_acc
+    print(f"TF-IDF               : {svm_tfidf_acc:.4f}")
 
-    print(f"BoW           : {svm_bow_acc:.4f}")
-    print(f"N-grams  : {svm_ngram_acc:.4f}")
-    print(f"TF-IDF        : {svm_tfidf_acc:.4f}")
-
-    print("\n" + "=" * 60)
+    # ==================== KNN ====================
+    print("\n" + "=" * 70)
     print("K-NEAREST NEIGHBORS (k=5)")
-    print("=" * 60)
+    print("=" * 70)
 
-    # KNN with BoW
+    # BoW
     knn_bow_model = train_bow_knn(train_data)
-    knn_bow_acc = evaluate(test_data,
-                          lambda t, m: predict_bow_knn(t, m, k=5),
-                          knn_bow_model)
+    knn_bow_acc = evaluate(test_data, lambda t, m: predict_bow_knn(t, m, k=5), knn_bow_model)
+    results['bow']['knn'] = knn_bow_acc
+    print(f"BoW                  : {knn_bow_acc:.4f}")
 
-    # KNN with N-grams
-    knn_ngram_model = train_ngram_knn(train_data, n=2)
-    knn_ngram_acc = evaluate(test_data,
-                            lambda t, m: predict_ngram_knn(t, m, k=5),
-                            knn_ngram_model)
+    # N-grams (multiple sizes)
+    for n in ngram_sizes:
+        knn_ngram_model = train_ngram_knn(train_data, n=n)
+        knn_ngram_acc = evaluate(test_data, lambda t, m: predict_ngram_knn(t, m, k=5), knn_ngram_model)
+        results['ngrams'][n]['knn'] = knn_ngram_acc
+        print(f"N-grams ({n})          : {knn_ngram_acc:.4f}")
 
-    # KNN with TF-IDF
+    # TF-IDF
     knn_tfidf_model = train_tfidf_knn(train_data)
-    knn_tfidf_acc = evaluate(test_data,
-                            lambda t, m: predict_tfidf_knn(t, m, k=5),
-                            knn_tfidf_model)
+    knn_tfidf_acc = evaluate(test_data, lambda t, m: predict_tfidf_knn(t, m, k=5), knn_tfidf_model)
+    results['tfidf']['knn'] = knn_tfidf_acc
+    print(f"TF-IDF               : {knn_tfidf_acc:.4f}")
 
-    print(f"BoW           : {knn_bow_acc:.4f}")
-    print(f"N-grams  : {knn_ngram_acc:.4f}")
-    print(f"TF-IDF        : {knn_tfidf_acc:.4f}")
-
-    print("\n" + "=" * 60)
+    # ==================== SUMMARY ====================
+    print("\n" + "=" * 70)
     print("SUMMARY - COMPLETE COMPARISON")
-    print("=" * 60)
-    print(f"{'Algorithm':<25} {'BoW':<10} {'N-grams':<10} {'TF-IDF':<10}")
-    print("-" * 60)
-    print(f"{'Naive Bayes':<25} {bow_acc:.4f}    {ngram_acc:.4f}    {tfidf_acc:.4f}")
-    print(f"{'Logistic Regression':<25} {lr_bow_acc:.4f}    {lr_ngram_acc:.4f}    {lr_tfidf_acc:.4f}")
-    print(f"{'SVM':<25} {svm_bow_acc:.4f}    {svm_ngram_acc:.4f}    {svm_tfidf_acc:.4f}")
-    print(f"{'KNN':<25} {knn_bow_acc:.4f}    {knn_ngram_acc:.4f}    {knn_tfidf_acc:.4f}")
+    print("=" * 70)
+    print(f"{'Algorithm':<25} {'BoW':<10} {'2-gram':<10} {'3-gram':<10} {'4-gram':<10} {'TF-IDF':<10}")
+    print("-" * 70)
+    
+    algos = [('Naive Bayes', 'nb'), ('Logistic Regression', 'lr'), ('SVM', 'svm'), ('KNN', 'knn')]
+    
+    for algo_name, algo_key in algos:
+        bow_val = results['bow'][algo_key]
+        ngram2_val = results['ngrams'][2][algo_key]
+        ngram3_val = results['ngrams'][3][algo_key]
+        ngram4_val = results['ngrams'][4][algo_key]
+        tfidf_val = results['tfidf'][algo_key]
+        
+        print(f"{algo_name:<25} {bow_val:.4f}    {ngram2_val:.4f}    {ngram3_val:.4f}    {ngram4_val:.4f}    {tfidf_val:.4f}")
 
 
 if __name__ == "__main__":
