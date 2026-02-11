@@ -182,7 +182,7 @@ NLU_Assignment_1/
 ## Documentation
 
 For detailed technical analysis, methodology, and insights, see:
-- **[REPORT.md](https://docs.google.com/document/d/1T4xzdP7oDO0iAoqYj88pV3qa9AcohpRXoZC8lP3NLmE/edit?usp=sharing)**: Comprehensive technical report
+- **[REPORT](https://docs.google.com/document/d/1T4xzdP7oDO0iAoqYj88pV3qa9AcohpRXoZC8lP3NLmE/edit?usp=sharing)**: Comprehensive technical report
 - **[GitHub Pages](https://viveksapkal2793.github.io/NLU_Assignment_1/)**: Interactive documentation
 
 ## Authors
