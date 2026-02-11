@@ -1,9 +1,6 @@
-# BBC News Classification: SPORT vs POLITICS
+# Text Document Classification: SPORT vs POLITICS
 
-[![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
-A comprehensive Natural Language Understanding (NLU) project implementing multiple machine learning algorithms for binary text classification of BBC news articles into SPORT and POLITICS categories.
+A comprehensive repository implementing multiple machine learning algorithms for binary text classification of BBC news articles into SPORT and POLITICS categories.
 
 ## Table of Contents
 
@@ -21,7 +18,7 @@ A comprehensive Natural Language Understanding (NLU) project implementing multip
 
 ## Overview
 
-This project demonstrates the implementation of various text classification algorithms from scratch (without high-level ML libraries like scikit-learn) to classify BBC news articles. The system compares different feature extraction techniques and classification algorithms to determine the most effective approach for distinguishing between sports and politics news articles.
+This repository demonstrates the implementation of various text classification algorithms from scratch (without high-level ML libraries like scikit-learn) to classify BBC news articles. The system compares different feature extraction techniques and classification algorithms to determine the most effective approach for distinguishing between sports and politics news articles.
 
 ### Key Objectives
 
@@ -169,24 +166,25 @@ NLU_Assignment_1/
 
 | Algorithm         | BoW    | 2-gram | 3-gram | 4-gram | Mix1-2 | Mix1-3 | TF-IDF |
 |-------------------|--------|--------|--------|--------|--------|--------|--------|
-| Naive Bayes       | 0.9752 | 0.9653 | 0.9455 | 0.9010 | 0.9752 | 0.9653 | 0.9752 |
-| Logistic Reg      | 0.9851 | 0.9752 | 0.9554 | 0.9208 | 0.9851 | 0.9752 | 0.9851 |
-| SVM               | 0.9851 | 0.9752 | 0.9554 | 0.9208 | 0.9851 | 0.9752 | 0.9851 |
-| KNN (k=5)         | 0.9703 | 0.9554 | 0.9307 | 0.8911 | 0.9703 | 0.9604 | 0.9703 |
+| Naive Bayes       | 1.0000 | 1.0000 | 0.8922 | 0.5988 | 1.0000 | 1.0000 | 0.9760 |
+| Logistic Reg      | 0.9880 | 0.9880 | 0.9760 | 0.9102 | 0.9940 | 0.9760 | 0.9820 |
+| SVM               | 0.9880 | 0.9820 | 0.9641 | 0.9401 | 0.9940 | 1.0000 | 0.9581 |
+| KNN (k=5)         | 0.8802 | 0.9521 | 0.9760 | 0.9281 | 0.8383 | 0.7964 | 0.9880 |
 
 ### Key Findings
 
-- **Best Performance**: Logistic Regression and SVM with BoW/TF-IDF (~98.5% accuracy)
-- **Feature Impact**: Simpler features (BoW, TF-IDF) outperform complex n-grams
-- **N-gram Trends**: Performance degrades with higher n-gram orders due to sparsity
-- **Consistency**: All models show similar trends across feature types
+- **Best Performance**: Naive Bayes achieves perfect accuracy (100%) on BoW, 2-gram, Mix1-2, and Mix1-3; SVM achieves 100% on Mix1-3
+- **Algorithm Strengths**: KNN performs best with TF-IDF (98.8%), while Naive Bayes excels with simpler n-gram features
+- **N-gram Sparsity**: Severe performance degradation with higher n-grams (Naive Bayes: 100% → 59.88% from 2-gram to 4-gram)
+- **Mixed N-grams**: Combining unigrams with bigrams/trigrams recovers performance lost in pure high-order n-grams
+- **Feature Effectiveness**: BoW and mixed n-grams consistently outperform pure high-order n-grams across all algorithms
 
-## 📖 Documentation
+## Documentation
 
 For detailed technical analysis, methodology, and insights, see:
-- **[REPORT.md](REPORT.md)**: Comprehensive 5+ page technical report
+- **[REPORT.md](https://docs.google.com/document/d/1T4xzdP7oDO0iAoqYj88pV3qa9AcohpRXoZC8lP3NLmE/edit?usp=sharing)**: Comprehensive technical report
 - **[GitHub Pages](https://viveksapkal2793.github.io/NLU_Assignment_1/)**: Interactive documentation
 
 ## Authors
 
-- **Vivek Sapkal** - [viveksapkal2793](https://github.com/viveksapkal2793)
+- [Vivek Sapkal (B22AI066)](b22ai066@iitj.ac.in)
