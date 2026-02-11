@@ -31,11 +31,12 @@ def sigmoid(z):
 
 def train_bow_naive_bayes(train_data):
     """Train Naive Bayes with Laplace smoothing."""
-    vocab = set()
-    word_counts = {"SPORT": defaultdict(int), "POLITICS": defaultdict(int)}
-    class_counts = defaultdict(int)
-    total_words = defaultdict(int)
+    vocab = set()  # Unique words across all documents
+    word_counts = {"SPORT": defaultdict(int), "POLITICS": defaultdict(int)}  # Word frequency per class
+    class_counts = defaultdict(int)  # Number of documents per class
+    total_words = defaultdict(int)  # Total word count per class
 
+    # Count word occurrences for each class
     for text, label in train_data:
         class_counts[label] += 1
         for word in tokenize(text):
@@ -53,9 +54,12 @@ def predict_bow(text, model):
 
     scores = {}
     for label in class_counts:
+        # Log prior probability: P(class)
         scores[label] = math.log(class_counts[label] / total_docs)
+        # Add log likelihood for each word: P(word|class)
         for word in tokenize(text):
             count = word_counts[label].get(word, 0)
+            # Laplace smoothing: (count + 1) / (total + vocab_size)
             scores[label] += math.log((count + 1) / (total_words[label] + vocab_size))
 
     return max(scores, key=scores.get)
@@ -64,10 +68,11 @@ def predict_bow(text, model):
 
 def train_bow_logistic_regression(train_data, learning_rate=0.1, epochs=20):
     """Train logistic regression with stochastic gradient descent."""
+    # Build vocabulary and index mapping
     vocab = sorted(set(word for text, _ in train_data for word in tokenize(text)))
     vocab_idx = {w: i for i, w in enumerate(vocab)}
     
-    # Pre-compute features
+    # Pre-compute features for efficiency (avoid repeated tokenization)
     feature_vectors = []
     labels_binary = []
     label_map = {"POLITICS": 0, "SPORT": 1}
@@ -76,25 +81,25 @@ def train_bow_logistic_regression(train_data, learning_rate=0.1, epochs=20):
         feature_vectors.append(bow_features(text, vocab_idx))
         labels_binary.append(label_map[label])
     
-    # Initialize weights
+    # Initialize weights and bias
     weights = [0.0] * len(vocab)
     bias = 0.0
     
-    # SGD training
+    # SGD training loop
     for epoch in range(epochs):
         indices = list(range(len(train_data)))
-        random.shuffle(indices)
+        random.shuffle(indices)  # Shuffle for stochastic gradient descent
         
         for idx in indices:
             features = feature_vectors[idx]
             y = labels_binary[idx]
             
-            # Forward pass
+            # Forward pass: compute prediction
             z = bias + sum(weights[i] * v for i, v in features.items())
             pred = sigmoid(z)
             error = pred - y
             
-            # Backward pass
+            # Backward pass: update weights using gradient descent
             bias -= learning_rate * error
             for i, v in features.items():
                 weights[i] -= learning_rate * error * v
@@ -112,13 +117,14 @@ def predict_bow_logistic_regression(text, model):
 
 def train_bow_svm(train_data, epochs=20, learning_rate=0.1):
     """Train SVM using perceptron algorithm."""
+    # Build vocabulary
     vocab = sorted(set(word for text, _ in train_data for word in tokenize(text)))
     vocab_idx = {w: i for i, w in enumerate(vocab)}
     
     # Pre-compute features
     feature_vectors = []
     labels_binary = []
-    label_map = {"POLITICS": -1, "SPORT": 1}
+    label_map = {"POLITICS": -1, "SPORT": 1}  # Binary labels for SVM
     
     for text, label in train_data:
         feature_vectors.append(bow_features(text, vocab_idx))
@@ -127,14 +133,14 @@ def train_bow_svm(train_data, epochs=20, learning_rate=0.1):
     weights = [0.0] * len(vocab)
     bias = 0.0
     
-    # Perceptron training
+    # Perceptron training: update only on misclassification
     for epoch in range(epochs):
         for idx in random.sample(range(len(train_data)), len(train_data)):
             features = feature_vectors[idx]
             y = labels_binary[idx]
             z = bias + sum(weights[i] * v for i, v in features.items())
             
-            # Update on misclassification
+            # Update weights if misclassified (y * z <= 0)
             if y * z <= 0:
                 bias += learning_rate * y
                 for i, v in features.items():
@@ -163,11 +169,11 @@ def predict_bow_knn(text, model, k=5):
     train_vectors, vocab_idx = model
     test_features = bow_features(text, vocab_idx)
     
-    # Compute similarities and get top k
+    # Compute cosine similarity with all training examples
     similarities = [(cosine_similarity(test_features, vec), label) for vec, label in train_vectors]
-    similarities.sort(reverse=True, key=lambda x: x[0])
+    similarities.sort(reverse=True, key=lambda x: x[0])  # Sort by similarity (descending)
     
-    # Majority vote
+    # Majority vote among top k neighbors
     votes = defaultdict(int)
     for _, label in similarities[:k]:
         votes[label] += 1

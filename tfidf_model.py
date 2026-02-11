@@ -6,7 +6,11 @@ def tokenize(text):
     return text.lower().split()
 
 def tfidf_features(text, vocab_idx, df, N):
-    """Convert text to TF-IDF feature vector."""
+    """Convert text to TF-IDF feature vector.
+    TF-IDF = Term Frequency × Inverse Document Frequency
+    TF-IDF(word) = count(word) × log(N / DF(word))
+    Weights rare words higher, common words lower.
+    """
     counts = defaultdict(int)
     for w in tokenize(text):
         counts[w] += 1
@@ -14,6 +18,7 @@ def tfidf_features(text, vocab_idx, df, N):
     features = {}
     for w, c in counts.items():
         if w in df and w in vocab_idx:
+            # TF = c (term frequency), IDF = log(N / (1 + DF))
             features[vocab_idx[w]] = c * math.log(N / (1 + df[w]))
     return features
 
@@ -35,10 +40,11 @@ def sigmoid(z):
 
 def train_tfidf_naive_bayes(train_data):
     """Train Naive Bayes using TF-IDF features."""
-    df = defaultdict(int)
-    tf = []
+    df = defaultdict(int)  # Document frequency: number of docs containing each word
+    tf = []  # Term frequency: word counts per document
     labels = []
 
+    # Compute term frequencies and document frequencies
     for text, label in train_data:
         labels.append(label)
         counts = defaultdict(int)
@@ -46,9 +52,10 @@ def train_tfidf_naive_bayes(train_data):
             counts[w] += 1
         tf.append(counts)
         for w in counts:
-            df[w] += 1
+            df[w] += 1  # Increment document frequency
 
     N = len(train_data)
+    # Compute TF-IDF vectors for all training documents
     tfidf = []
     for counts in tf:
         vec = {w: c * math.log(N / (1 + df[w])) for w, c in counts.items()}
@@ -57,27 +64,30 @@ def train_tfidf_naive_bayes(train_data):
     return tfidf, labels, df, N
 
 def predict_tfidf(text, model):
-    """Predict using TF-IDF Naive Bayes (class centroids)."""
+    """Predict using TF-IDF Naive Bayes (class centroids).
+    Uses dot product similarity between test document and class centroids.
+    """
     tfidf, labels, df, N = model
     
-    # Compute test TF-IDF
+    # Compute TF-IDF for test document
     test_counts = defaultdict(int)
     for w in tokenize(text):
         test_counts[w] += 1
     test_tfidf = {w: c * math.log(N / (1 + df[w])) for w, c in test_counts.items() if w in df}
     
-    # Compute class scores
+    # Compute similarity scores with each class
     class_scores = defaultdict(float)
     class_doc_count = defaultdict(int)
     
     for i, vec in enumerate(tfidf):
         label = labels[i]
         class_doc_count[label] += 1
+        # Dot product between test and training document
         for w in test_tfidf:
             if w in vec:
                 class_scores[label] += test_tfidf[w] * vec[w]
     
-    # Average by class size
+    # Average scores by class size (centroid approach)
     for label in class_scores:
         class_scores[label] /= class_doc_count[label]
     
@@ -87,7 +97,7 @@ def predict_tfidf(text, model):
 
 def train_tfidf_logistic_regression(train_data, learning_rate=0.1, epochs=20):
     """Train logistic regression with TF-IDF features."""
-    # Compute document frequency
+    # Compute document frequency for all words
     df = defaultdict(int)
     for text, _ in train_data:
         for w in set(tokenize(text)):
@@ -97,13 +107,14 @@ def train_tfidf_logistic_regression(train_data, learning_rate=0.1, epochs=20):
     vocab = sorted(df.keys())
     vocab_idx = {w: i for i, w in enumerate(vocab)}
     
-    # Pre-compute features
+    # Pre-compute TF-IDF features for efficiency
     feature_vectors = [tfidf_features(text, vocab_idx, df, N) for text, _ in train_data]
     labels_binary = [0 if label == "POLITICS" else 1 for _, label in train_data]
     
     weights = [0.0] * len(vocab)
     bias = 0.0
     
+    # Stochastic gradient descent
     for epoch in range(epochs):
         for idx in random.sample(range(len(train_data)), len(train_data)):
             features = feature_vectors[idx]
@@ -111,6 +122,7 @@ def train_tfidf_logistic_regression(train_data, learning_rate=0.1, epochs=20):
             z = bias + sum(weights[i] * v for i, v in features.items())
             error = sigmoid(z) - y
             
+            # Update weights
             bias -= learning_rate * error
             for i, v in features.items():
                 weights[i] -= learning_rate * error * v
@@ -128,6 +140,7 @@ def predict_tfidf_logistic_regression(text, model):
 
 def train_tfidf_svm(train_data, epochs=20, learning_rate=0.1):
     """Train SVM with TF-IDF features."""
+    # Compute document frequency
     df = defaultdict(int)
     for text, _ in train_data:
         for w in set(tokenize(text)):
@@ -138,18 +151,19 @@ def train_tfidf_svm(train_data, epochs=20, learning_rate=0.1):
     vocab_idx = {w: i for i, w in enumerate(vocab)}
     
     feature_vectors = [tfidf_features(text, vocab_idx, df, N) for text, _ in train_data]
-    labels_binary = [-1 if label == "POLITICS" else 1 for _, label in train_data]
+    labels_binary = [-1 if label == "POLITICS" else 1 for _, label in train_data]  # Binary labels
     
     weights = [0.0] * len(vocab)
     bias = 0.0
     
+    # Perceptron algorithm: update on misclassification
     for epoch in range(epochs):
         for idx in random.sample(range(len(train_data)), len(train_data)):
             features = feature_vectors[idx]
             y = labels_binary[idx]
             z = bias + sum(weights[i] * v for i, v in features.items())
             
-            if y * z <= 0:
+            if y * z <= 0:  # Misclassified
                 bias += learning_rate * y
                 for i, v in features.items():
                     weights[i] += learning_rate * y * v
@@ -184,9 +198,11 @@ def predict_tfidf_knn(text, model, k=5):
     train_vectors, vocab_idx, df, N = model
     test_features = tfidf_features(text, vocab_idx, df, N)
     
+    # Compute cosine similarity with all training documents
     similarities = [(cosine_similarity(test_features, vec), label) for vec, label in train_vectors]
-    similarities.sort(reverse=True, key=lambda x: x[0])
+    similarities.sort(reverse=True, key=lambda x: x[0])  # Sort by similarity
     
+    # Majority vote among k nearest neighbors
     votes = defaultdict(int)
     for _, label in similarities[:k]:
         votes[label] += 1

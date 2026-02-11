@@ -2,6 +2,11 @@ import csv
 import random
 
 def load_bbc_data(csv_path):
+    """Load and balance BBC news dataset (SPORT vs POLITICS only).
+    
+    Returns:
+        list: Balanced dataset of (text, label) tuples, shuffled randomly
+    """
     data = []
     sport_data = []
     politics_data = []
@@ -18,12 +23,12 @@ def load_bbc_data(csv_path):
             elif category == 'politics':
                 politics_data.append((text, "POLITICS"))
 
-    # Balance the dataset
+    # Balance the dataset: use equal number of samples from each class
     n = min(len(sport_data), len(politics_data))
     sport_data = sport_data[:n]
     politics_data = politics_data[:n]
 
-    # Combine and shuffle
+    # Combine and shuffle to prevent ordering bias
     data = sport_data + politics_data
     random.shuffle(data)
     return data

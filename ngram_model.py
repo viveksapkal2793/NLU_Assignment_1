@@ -6,11 +6,16 @@ def tokenize(text):
     return text.lower().split()
 
 def extract_ngrams(words, n):
-    """Extract n-grams from word list."""
+    """Extract n-grams from word list.
+    Example: ['I', 'love', 'sports'] with n=2 -> ['I_love', 'love_sports']
+    """
     return ["_".join(words[i:i+n]) for i in range(len(words)-n+1)] if len(words) >= n else []
 
 def extract_mixed_ngrams(words, max_n):
-    """Extract mixed n-grams (1 to max_n)."""
+    """Extract mixed n-grams (1 to max_n).
+    Combines unigrams, bigrams, trigrams, etc. for better coverage.
+    Example: ['I', 'love', 'sports'] with max_n=2 -> ['I', 'love', 'sports', 'I_love', 'love_sports']
+    """
     return [ng for n in range(1, min(max_n + 1, len(words) + 1)) 
             for ng in (words if n == 1 else extract_ngrams(words, n))]
 
@@ -50,11 +55,12 @@ def sigmoid(z):
 
 def train_ngram_naive_bayes(train_data, n=2):
     """Train Naive Bayes with n-grams."""
-    vocab = set()
-    counts = {"SPORT": defaultdict(int), "POLITICS": defaultdict(int)}
-    totals = defaultdict(int)
-    class_counts = defaultdict(int)
+    vocab = set()  # Unique n-grams
+    counts = {"SPORT": defaultdict(int), "POLITICS": defaultdict(int)}  # N-gram frequency per class
+    totals = defaultdict(int)  # Total n-gram count per class
+    class_counts = defaultdict(int)  # Document count per class
 
+    # Count n-gram occurrences for each class
     for text, label in train_data:
         class_counts[label] += 1
         for ng in extract_ngrams(tokenize(text), n):
@@ -71,10 +77,13 @@ def predict_ngram(text, model, n):
     total_docs = sum(class_counts.values())
     ngrams = extract_ngrams(tokenize(text), n)
 
+    # Initialize with log prior probabilities
     scores = {label: math.log(class_counts[label] / total_docs) for label in class_counts}
+    # Add log likelihood for each n-gram
     for ng in ngrams:
         for label in scores:
             c = counts[label].get(ng, 0)
+            # Apply Laplace smoothing
             scores[label] += math.log((c + 1) / (totals[label] + vocab_size))
 
     return max(scores, key=scores.get)
@@ -82,7 +91,9 @@ def predict_ngram(text, model, n):
 # ==================== NAIVE BAYES (MIXED N-GRAMS) ====================
 
 def train_ngram_naive_bayes_mixed(train_data, max_n=3):
-    """Train Naive Bayes with mixed n-grams (1 to max_n)."""
+    """Train Naive Bayes with mixed n-grams (1 to max_n).
+    Reduces sparsity by including lower-order n-grams.
+    """
     vocab = set()
     counts = {"SPORT": defaultdict(int), "POLITICS": defaultdict(int)}
     totals = defaultdict(int)
@@ -116,9 +127,11 @@ def predict_ngram_mixed(text, model):
 
 def train_ngram_logistic_regression(train_data, n=2, learning_rate=0.1, epochs=20):
     """Train logistic regression with n-grams."""
+    # Build n-gram vocabulary
     vocab = sorted(set(ng for text, _ in train_data for ng in extract_ngrams(tokenize(text), n)))
     vocab_idx = {ng: i for i, ng in enumerate(vocab)}
     
+    # Pre-compute feature vectors and labels
     feature_vectors = []
     labels_binary = []
     label_map = {"POLITICS": 0, "SPORT": 1}
@@ -130,6 +143,7 @@ def train_ngram_logistic_regression(train_data, n=2, learning_rate=0.1, epochs=2
     weights = [0.0] * len(vocab)
     bias = 0.0
     
+    # Stochastic gradient descent
     for epoch in range(epochs):
         for idx in random.sample(range(len(train_data)), len(train_data)):
             features = feature_vectors[idx]
@@ -137,6 +151,7 @@ def train_ngram_logistic_regression(train_data, n=2, learning_rate=0.1, epochs=2
             z = bias + sum(weights[i] * v for i, v in features.items())
             error = sigmoid(z) - y
             
+            # Update weights
             bias -= learning_rate * error
             for i, v in features.items():
                 weights[i] -= learning_rate * error * v
@@ -191,18 +206,19 @@ def train_ngram_svm(train_data, n=2, epochs=20, learning_rate=0.1):
     vocab_idx = {ng: i for i, ng in enumerate(vocab)}
     
     feature_vectors = [ngram_features(text, vocab_idx, n) for text, _ in train_data]
-    labels_binary = [-1 if label == "POLITICS" else 1 for _, label in train_data]
+    labels_binary = [-1 if label == "POLITICS" else 1 for _, label in train_data]  # Binary labels
     
     weights = [0.0] * len(vocab)
     bias = 0.0
     
+    # Perceptron: update only on misclassification
     for epoch in range(epochs):
         for idx in random.sample(range(len(train_data)), len(train_data)):
             features = feature_vectors[idx]
             y = labels_binary[idx]
             z = bias + sum(weights[i] * v for i, v in features.items())
             
-            if y * z <= 0:
+            if y * z <= 0:  # Misclassified
                 bias += learning_rate * y
                 for i, v in features.items():
                     weights[i] += learning_rate * y * v
@@ -263,9 +279,11 @@ def predict_ngram_knn(text, model, k=5):
     train_vectors, vocab_idx, n = model
     test_features = ngram_features(text, vocab_idx, n)
     
+    # Compute similarities with all training examples
     similarities = [(cosine_similarity(test_features, vec), label) for vec, label in train_vectors]
-    similarities.sort(reverse=True, key=lambda x: x[0])
+    similarities.sort(reverse=True, key=lambda x: x[0])  # Sort by similarity
     
+    # Majority vote among k nearest neighbors
     votes = defaultdict(int)
     for _, label in similarities[:k]:
         votes[label] += 1

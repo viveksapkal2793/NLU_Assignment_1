@@ -7,7 +7,15 @@ def tokenize(text):
 
 
 def analyze_dataset(data):
-    """Concise dataset analysis focused on classification-relevant metrics."""
+    """Concise dataset analysis focused on classification-relevant metrics.
+    
+    Displays:
+    1. Class distribution (balance check)
+    2. Document length statistics (words per document)
+    3. Vocabulary statistics (unique words, overlap)
+    4. Class-distinctive words (most indicative of each class)
+    5. Separability analysis (expected classification difficulty)
+    """
     print("=" * 70)
     print("DATASET ANALYSIS")
     print("=" * 70)
@@ -127,22 +135,31 @@ def analyze_dataset(data):
 
 
 def get_distinctive_words(freq1, freq2, count1, count2, stop_words):
-    """Calculate distinctive words using frequency ratio."""
+    """Calculate distinctive words using frequency ratio.
+    
+    Identifies words that appear much more frequently in one class than another.
+    Higher ratio = more distinctive.
+    
+    Filters:
+    - Stop words (common words like 'the', 'a')
+    - Short words (< 3 characters)
+    - Rare words (< 5 occurrences)
+    """
     distinctive = []
     
     for word in freq1:
         if word in stop_words or len(word) < 3 or freq1[word] < 5:
             continue
         
-        # Normalize by class size
+        # Normalize frequencies by class size for fair comparison
         norm_freq1 = freq1[word] / count1
         norm_freq2 = freq2.get(word, 0) / count2 if count2 > 0 else 0
         
-        # Calculate distinctiveness score
+        # Calculate distinctiveness score (ratio with smoothing)
         if norm_freq2 == 0:
-            score = norm_freq1 * 10
+            score = norm_freq1 * 10  # High score for class-exclusive words
         else:
-            score = norm_freq1 / (norm_freq2 + 0.01)
+            score = norm_freq1 / (norm_freq2 + 0.01)  # Ratio with smoothing
         
         distinctive.append((word, score))
     

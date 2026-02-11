@@ -10,29 +10,31 @@ def evaluate(test_data, predict_fn, model):
     return correct / len(test_data)
 
 def train_and_evaluate(train_fn, predict_fn, train_data, test_data, **kwargs):
-    """Train model and evaluate on test data."""
+    """Train model and evaluate on test data in one step."""
     model = train_fn(train_data, **kwargs)
     return evaluate(test_data, predict_fn, model)
 
 def main():
     # Load and analyze data
     data = load_bbc_data("bbc-text.csv")
-    analyze_dataset(data)
-    train_data, test_data = train_test_split(data)
+    analyze_dataset(data)  # Display dataset statistics
+    train_data, test_data = train_test_split(data, ratio=0.8)  # 80-20 split
     
     print("=" * 80)
     print("MODEL TRAINING & EVALUATION")
     print("=" * 80)
     print(f"\nTraining: {len(train_data)} | Testing: {len(test_data)}\n")
 
-    # Configuration
-    ngram_sizes = [2, 3, 4]
-    mixed_ngrams = [2, 3]
+    # Configuration: specify n-gram sizes to test
+    ngram_sizes = [2, 3, 4]  # Bigrams, trigrams, quadgrams
+    mixed_ngrams = [2, 3]  # Mixed (1+2), Mixed (1+2+3)
+    
+    # Results storage: organized by feature type and algorithm
     results = {
-        'bow': {},
-        'ngrams': {n: {} for n in ngram_sizes},
-        'mixed': {n: {} for n in mixed_ngrams},
-        'tfidf': {}
+        'bow': {},  # Bag of Words results
+        'ngrams': {n: {} for n in ngram_sizes},  # N-gram results
+        'mixed': {n: {} for n in mixed_ngrams},  # Mixed n-gram results
+        'tfidf': {}  # TF-IDF results
     }
 
     # ==================== NAIVE BAYES ====================
@@ -137,6 +139,7 @@ def main():
     print(f"TF-IDF               : {results['tfidf']['knn']:.4f}")
 
     # ==================== SUMMARY ====================
+    # Display comprehensive comparison table: 4 algorithms × 7 feature types
     print("\n" + "=" * 80)
     print("SUMMARY - COMPLETE COMPARISON")
     print("=" * 80)
